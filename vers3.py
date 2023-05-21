@@ -3,9 +3,9 @@ import re
 import math
 import json
 from json import JSONEncoder
-import logging
-import sys
-import pickle 
+import pymorphy2
+import pymorphy2_dicts_uk
+import time
 
 from colorama import Fore, Back, Style
 class MyEncoder(JSONEncoder):
@@ -17,9 +17,9 @@ class ChatEntry:
         self.content = content
 class Chat:
     def __add_user_entry(self, content):
-        self.entries.append(ChatEntry('user', content)) 
+        self.entries.append(ChatEntry('Користувач', content)) 
     def __add_system_entry(self, content):
-        self.entries.append(ChatEntry('system', content))
+        self.entries.append(ChatEntry('Мудрагель', content))
     def __init__(self):
         self.entries = []
 
@@ -137,22 +137,105 @@ class Chat:
 а Present Continuous – це хвилинна дія в даний момент.'''
         def declensions(self):
             return '''Називний, Родовий, Давальний, Знахідний,
-Орудний, Місцевий, Кличний.
-            '''
+Орудний, Місцевий, Кличний.'''
         def dative_case(self):
             return '''В давальному відмінку однини іменники мають закінчення 
 -ові (-еві, -єві), -у (-ю), -і (-ї, -яті, -аті, -ені). Закінчення 
 залежить від роду, відміни та закінчення в Н.в.'''
-        
+        #filehandling
+        def file_h_description(self):
+            return f'''Ви обрали тему «Робота з текстом». 
+Ви можете дати мені наступні завдання: 
+вивести список всіх унікальних слів,
+вивести текст без зайвих пробілів,
+вивести кількість слів, що містять цифри,
+видалити з тексту всі слова, які містять цифри'''
+        def list_uniq(self):
+            self.write_answer('Будь ласка, введіть шлях до файлу з текстом: ')
+            path_from = self.read_input()
+            self.write_answer('Будь ласка, введіть шлях до файлу, куди треба записати відповідь: ')
+            path_to = self.read_input()
+            try:
+                text_file = open(path_from, 'r')
+                user_text = text_file.read()
+                morph = pymorphy2.MorphAnalyzer(lang='uk')
+                clean_text = re.sub(r'[^\w\s]', '', user_text)
+                word_list = clean_text.split()
+                normal_word_list=[]
+                for i in word_list:
+                    p = morph.parse(i)[0]
+                    normal_word_list.append(p.normal_form)
+                final_file = open(path_to, "w")
+                final_file.write(' '.join(set(normal_word_list)))
+                final_file.close()
+                text_file.close
+                return f'Список унікальних слів: {" ".join(set(normal_word_list))}'
+            except:
+                return f'Перепрошую, але щось не так:('
+        def no_extra_spaces(self):
+            self.write_answer('Будь ласка, введіть шлях до файлу з текстом: ')
+            path_from = self.read_input()
+            self.write_answer('Будь ласка, введіть шлях до файлу, куди треба записати відповідь: ')
+            path_to = self.read_input()
+            try:
+                text_file = open(path_from, 'r')
+                user_text = text_file.read()
+                final_file = open(path_to, "w")
+                final_file.write(''.join(re.sub(' +', ' ', user_text)))
+                final_file.close()
+                text_file.close
+                return f"Текст без зайвих пробілів: {''.join(re.sub(' +', ' ', user_text))}"
+            except:
+                return f'Перепрошую, але щось не так:('
+        def words_with_numbers(self):
+            self.write_answer('Будь ласка, введіть шлях до файлу з текстом: ')
+            path_from = self.read_input()
+            self.write_answer('Будь ласка, введіть шлях до файлу, куди треба записати відповідь: ')
+            path_to = self.read_input()
+            try:
+                text_file = open(path_from, 'r')
+                user_text = text_file.read()
+                with_numb=[]
+                for i in re.sub(' +', ' ', user_text).split(): 
+                    if re.findall("[0-9]+", i):
+                        with_numb.append(i)
+                final_file = open(path_to, "w")
+                final_file.write(f"Слова з числами: {' '.join(with_numb)} та їх кількість: {len(with_numb)}")
+                final_file.close()
+                text_file.close
+                return f"Слова з числами: {' '.join(with_numb)} та їх кількість: {len(with_numb)}"
+            except:
+                return f'Перепрошую, але щось не так:('
+        def delete_numbers(self):
+            self.write_answer('Будь ласка, введіть шлях до файлу з текстом: ')
+            path_from = self.read_input()
+            self.write_answer('Будь ласка, введіть шлях до файлу, куди треба записати відповідь: ')
+            path_to = self.read_input()
+            try:
+                text_file = open(path_from, 'r')
+                user_text = text_file.read()
+                without_numb=[]
+                for i in re.sub(' +', ' ', user_text).split(): 
+                    if not re.findall("[0-9]+", i):
+                        without_numb.append(i)
+                final_file = open(path_to, "w")
+                final_file.write(f"Текст без слів з числами: {' '.join(without_numb)}")
+                final_file.close()
+                text_file.close
+                return f"Текст без слів з числами: {' '.join(without_numb)}"
+            except:
+                return f'Перепрошую, але щось не так:('  
 
         themes={'математика':{'опис':math_description,'площа кола':s_circle, 'площа прямокутника':s_rectangle,
                         'відстань між 2 точками':distance, 
                         'скалярний добуток векторів':vectors, 'координати центра кола за 3 точками':center_circle}, 
                 'фізика':{'опис':phys_description, 'закон всесвітнього тяжіння':gravity, 
                           'закон стефана-больцмана': stef_bolz}, 
-                'географія':{'опис':geo_description, 'азимут від точки А(х1, у1) до точки В(х2, у2)':bearing, 'найбільший материк':mainland}, 
-                'філологія':{'опис':phil_description, 'різниця між Present Simple та Present Continuous':simpcont, 'відмінки в українській мові':declensions, 'утворення дієслів': dative_case},
-                'робота з текстом':{}, 
+                'географія':{'опис':geo_description, 'азимут від точки a(х1, у1) до точки b(х2, у2)':bearing, 'найбільший материк':mainland}, 
+                'філологія':{'опис':phil_description, 'різниця між present Simple та present continuous':simpcont, 'відмінки в українській мові':declensions, 'утворення дієслів': dative_case},
+                'робота з текстом':{'опис':file_h_description, 'вивести список всіх унікальних слів':list_uniq,
+                  'вивести текст без зайвих пробілів':no_extra_spaces, 'вивести кількість слів, що містять цифри':words_with_numbers,
+                                                       'видалити з тексту всі слова, які містять цифри':delete_numbers}, 
                 'загальне':{}}
         inside_phrases = ['Гм, цікавий вибір. Введіть параметри за необхідності: ', 'Чудовий вибір! Введіть параметри за необхідності: ', 
                      'Вас справді це цікавить? Ну що ж, най буде. Введіть параметри за необхідності: ']
@@ -203,7 +286,8 @@ class Chat:
                 'На все добре, гарного дня!', 'Ну нарешті...', 'Чао-какао!']
         content = random.choice(farewells)
         return content
-f = open("chat_hist_t.txt", "w", encoding='utf-8')
+name_txt = f'dialog-{time.strftime("%Y%m%d-%H%M%S")}.txt'
+f = open(name_txt, "w", encoding='utf-8')
 chat = Chat()
 
 chat.write_answer ('''Вітаю, мене звати Мудрагель. Ви можете задати мені питання з 
