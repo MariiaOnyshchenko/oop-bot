@@ -5,37 +5,33 @@ import json
 from json import JSONEncoder
 import logging
 import sys
+import pickle 
+
 from colorama import Fore, Back, Style
-
-
 class MyEncoder(JSONEncoder):
     def default (self, obj):
       return obj.__dict__  
-
 class ChatEntry:
     def __init__(self, role, content):
         self.role = role
         self.content = content
-
 class Chat:
     def __add_user_entry(self, content):
         self.entries.append(ChatEntry('user', content)) 
     def __add_system_entry(self, content):
         self.entries.append(ChatEntry('system', content))
-
-
-
     def __init__(self):
         self.entries = []
 
-
     def read_input(self):
-        input_str= input(f'{Fore.LIGHTMAGENTA_EX}[User]: ').lower()
+        input_str= input(f'{Fore.LIGHTMAGENTA_EX}Користувач: ').lower()
         self.__add_user_entry(input_str)
+        f.write(f'Користувач: {input_str}\n')
         return input_str
-    def write(self, content):
-        print(f'{Fore.CYAN}[Bot]: {content}')
+    def write_answer(self, content):
+        print(f'{Fore.CYAN}Мудрагель: {content}')
         self.__add_system_entry(content)
+        f.write(f'Мудрагель: {content}\n')
     def match_reply(self, content):
 
         #math
@@ -98,7 +94,6 @@ class Chat:
 найбільший материк, азимут від точки А(х1, у1) до точки В(х2, у2)'''
 
         def bearing (llat1, llong1, llat2, llong2):
-            radius_earth = 6372795
             
             #в радіанах
             lat1 = llat1*math.pi/180.
@@ -150,7 +145,6 @@ class Chat:
 залежить від роду, відміни та закінчення в Н.в.'''
         
 
-
         themes={'математика':{'опис':math_description,'площа кола':s_circle, 'площа прямокутника':s_rectangle,
                         'відстань між 2 точками':distance, 
                         'скалярний добуток векторів':vectors, 'координати центра кола за 3 точками':center_circle}, 
@@ -166,45 +160,53 @@ class Chat:
                'Що-що? Не розумію:(', 'Ем... шо?']
         while True:
             if content in themes.keys():
-                self.write(themes[content]['опис'](self))
+                self.write_answer(themes[content]['опис'](self))
                 theme = content
                 while True:
                     subtheme = self.read_input()
                     if subtheme in themes[theme].keys():
-                        self.write(random.choice(inside_phrases))
+                        self.write_answer(random.choice(inside_phrases))
                         parameter = self.read_input()
-                        try:
-                            self.write(themes[theme][subtheme](*map(float,parameter.split())))
-                        except:
-                            self.write(themes[theme][subtheme](self))
+                        if parameter == 'назад':
+                            content='назад'
+                            break
+                        elif parameter == 'вихід':
+                            content='вихід'
+                            break
                         else:
-                            self.write(random.choice(error_phrases))
-                        continue
+                            try:
+                                self.write_answer(themes[theme][subtheme](*map(float,parameter.split())))
+                                continue
+                            except:
+                                self.write_answer(themes[theme][subtheme](self))
+                                continue
                     elif subtheme == 'вихід':
+                        content='вихід'
                         break
                     elif subtheme == 'назад':
+                        content='назад'
                         break
                     else:
-                        self.write(random.choice(error_phrases))
+                        self.write_answer(random.choice(error_phrases))
                         continue
-            if content=='вихід' or subtheme == 'вихід':
-                return self.write('Впевнені? Якщо так, введіть вихід ще раз. ')
-            if content=='назад' or subtheme == 'назад':
-                return self.write('''Ви можете задати мені питання з 
+            if content=='вихід':
+                return self.write_answer('Впевнені? Якщо так, введіть вихід ще раз. ')
+            if content=='назад':
+                return self.write_answer('''Ви можете задати мені питання з 
 наступних тем: математика, фізика, філологія, географія, робота з текстом, загальне.
-Будь ласка, введіть назву теми, на яку б ви хотіли поспілкуватись''')
+Будь ласка, введіть назву теми, на яку б ви хотіли поспілкуватись:''')
             else: 
-                return self.write(random.choice(error_phrases))
+                return self.write_answer(random.choice(error_phrases))
                 
     def exit(self):
         farewells=['Був радий поспілкуватись!', 'До зустрічі!',
                 'На все добре, гарного дня!', 'Ну нарешті...', 'Чао-какао!']
         content = random.choice(farewells)
         return content
-
+f = open("chat_hist_t.txt", "w", encoding='utf-8')
 chat = Chat()
 
-chat.write ('''Вітаю, мене звати Мудрагель. Ви можете задати мені питання з 
+chat.write_answer ('''Вітаю, мене звати Мудрагель. Ви можете задати мені питання з 
 наступних тем: математика, фізика, філологія, географія, робота з текстом, загальне.
 Будь ласка, введіть назву теми, на яку б ви хотіли поспілкуватись; 
 Для виходу введіть "вихід".
@@ -213,9 +215,11 @@ chat.write ('''Вітаю, мене звати Мудрагель. Ви може
 while True:
     user_input = chat.read_input()
     if user_input == 'вихід':
-        chat.write(chat.exit())
+        chat.write_answer(chat.exit())
         break
     chat.match_reply(user_input)
 
-with open('chat_log.json', 'w') as file_json:
+with open('chat_hist_j.json', 'w') as file_json:
     json.dump(chat, file_json, cls = MyEncoder)
+
+f.close()
