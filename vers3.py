@@ -256,19 +256,26 @@ class Chat:
                         elif parameter == 'вихід':
                             content='вихід'
                             break
-                        else:
-                            try:
-                                self.write_answer(themes[theme][subtheme](*map(float,parameter.split())))
-                                continue
-                            except:
-                                self.write_answer(themes[theme][subtheme](self))
-                                continue
+                        elif parameter == 'допомога':
+                            self.write_answer(f'''Ви ввели запит на допомогу. Наразі ви знаходитесь у темі {theme}, 
+підтемі {subtheme}. Будь ласка, введіть параметри або вихід/назад.''')
+                            parameter = self.read_input()
+                        try:
+                            self.write_answer(themes[theme][subtheme](*map(float,parameter.split())))
+                            continue
+                        except:
+                            self.write_answer(themes[theme][subtheme](self))
+                            continue
                     elif subtheme == 'вихід':
                         content='вихід'
                         break
                     elif subtheme == 'назад':
                         content='назад'
                         break
+                    elif subtheme == 'допомога':
+                            self.write_answer(f'''Ви ввели запит на допомогу. Наразі ви знаходитесь у темі {theme}. 
+Будь ласка, введіть підтему, яка вас цікавить, або назад/вихід.''')
+                            continue
                     else:
                         self.write_answer(random.choice(error_phrases))
                         continue
@@ -278,6 +285,11 @@ class Chat:
                 return self.write_answer('''Ви можете задати мені питання з 
 наступних тем: математика, фізика, філологія, географія, робота з текстом, загальне.
 Будь ласка, введіть назву теми, на яку б ви хотіли поспілкуватись:''')
+            if content == 'допомога':
+                self.write_answer('''Ви ввели запит на допомогу. Ви можете задати мені питання з 
+наступних тем: математика, фізика, філологія, географія, робота з текстом, загальне.
+Будь ласка, введіть назву теми, на яку б ви хотіли поспілкуватись:''')
+                content = self.read_input()
             else: 
                 return self.write_answer(random.choice(error_phrases))
                 
@@ -292,9 +304,10 @@ chat = Chat()
 
 chat.write_answer ('''Вітаю, мене звати Мудрагель. Ви можете задати мені питання з 
 наступних тем: математика, фізика, філологія, географія, робота з текстом, загальне.
-Будь ласка, введіть назву теми, на яку б ви хотіли поспілкуватись; 
 Для виходу введіть "вихід".
-Для повернення на вибір вище введіть "назад".''')
+Для повернення на вибір вище введіть "назад".
+Для отримання допомоги введіть "допомога".
+Будь ласка, введіть назву теми, на яку б ви хотіли поспілкуватись:''')
 
 while True:
     user_input = chat.read_input()
